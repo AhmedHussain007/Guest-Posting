@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,26 +16,28 @@ import {
 import { Input } from "@/components/ui/input";
 import { DobPicker } from "@/components/dobPicker";
 import { Separator } from "@/components/ui/separator";
-import { User, Mail } from "lucide-react";
+import { User, Mail, Lock, Eye, EyeOff } from "lucide-react";
 
-// Mock AuthContext (replace with your real implementation)
-const AuthContext = React.createContext({ signup: async () => true });
-const useAuth = () => useContext(AuthContext);
 
 const formSchema = z.object({
   firstName: z.string().min(3, "First name too short").max(50, "First name is too long"),
   lastName: z.string().min(3, "Last name too short").max(50, "Last name is too long"),
   email: z.string().email("Please enter a valid email").min(5, "Email too short"),
+  password: z.string().min(8, "Must be at least 8 characters")
+    .regex(/[A-Z]/, "Must contain at least one uppercase letter")
+    .regex(/[0-9]/, "Must contain at least one number")
+    .regex(/[^A-Za-z0-9]/, "Must contain at least one special character")
+    .nonempty("Password is required"),
   dob: z.date().refine(val => !!val, { message: "Date of birth is required" }),
 });
+import { useSignupUserMutation } from "@/apis/authApi";
 
 const SignUpPage = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const { signup } = useAuth();
-
+  // ...existing code...
+  const [hide, setHide] = useState(true);
+  const [signupUser, { isLoading: signupIsLoading }] = useSignupUserMutation();
   const form = useForm({
-    defaultValues: { firstName: "", lastName: "", email: "", dob: undefined },
+    defaultValues: { firstName: "", lastName: "", email: "", password: "", dob: undefined },
     resolver: zodResolver(formSchema),
     mode: "onChange",
     reValidateMode: "onChange",
@@ -43,32 +45,28 @@ const SignUpPage = () => {
 
   const formValues = form.watch();
   const disableButton =
-    isLoading ||
+    signupIsLoading ||
     !formValues.firstName?.trim() ||
     !formValues.lastName?.trim() ||
     !formValues.email?.trim() ||
+    !formValues.password?.trim() ||
     !formValues.dob ||
     !form.formState.isValid;
 
   const onSubmit = async (data) => {
-    setIsSubmitted(true);
     const isValid = await form.trigger();
     if (!isValid) {
       alert("Please fix the errors in the form");
       return;
     }
-
     try {
-      setIsLoading(true);
-      console.log("Creating account...", data);
-      const success = await signup(data);
-      if (success) alert("Account created successfully! Welcome to Zikrly!");
-      else alert("Failed to create account. Please try again.");
+      // Convert dob to ISO string if needed
+      const payload = { ...data, dob: data.dob instanceof Date ? data.dob.toISOString() : data.dob };
+      await signupUser(payload).unwrap();
+      alert("Account created successfully! Welcome to Zikrly!");
     } catch (err) {
       console.error(err);
-      alert("An error occurred during signup. Please try again.");
-    } finally {
-      setIsLoading(false);
+      alert(err?.data?.message || "An error occurred during signup. Please try again.");
     }
   };
 
@@ -107,7 +105,7 @@ const SignUpPage = () => {
                             type="text"
                             placeholder="John"
                             className="w-full pl-10"
-                            disabled={isLoading}
+                            disabled={signupIsLoading}
                             {...field}
                             onBlur={() => {
                               field.onBlur();
@@ -116,7 +114,7 @@ const SignUpPage = () => {
                           />
                         </div>
                       </FormControl>
-                      <FormMessage>{isSubmitted && form.formState.errors.firstName?.message}</FormMessage>
+                      <FormMessage>{form.formState.errors.firstName?.message}</FormMessage>
                     </FormItem>
                   )}
                 />
@@ -134,7 +132,7 @@ const SignUpPage = () => {
                             type="text"
                             placeholder="Doe"
                             className="w-full pl-10"
-                            disabled={isLoading}
+                            disabled={signupIsLoading}
                             {...field}
                             onBlur={() => {
                               field.onBlur();
@@ -143,7 +141,7 @@ const SignUpPage = () => {
                           />
                         </div>
                       </FormControl>
-                      <FormMessage>{isSubmitted && form.formState.errors.lastName?.message}</FormMessage>
+                      <FormMessage>{form.formState.errors.lastName?.message}</FormMessage>
                     </FormItem>
                   )}
                 />
@@ -163,7 +161,7 @@ const SignUpPage = () => {
                           type="email"
                           placeholder="m@example.com"
                           className="w-full pl-10"
-                          disabled={isLoading}
+                          disabled={signupIsLoading}
                           {...field}
                           onBlur={() => {
                             field.onBlur();
@@ -172,7 +170,42 @@ const SignUpPage = () => {
                         />
                       </div>
                     </FormControl>
-                    <FormMessage>{isSubmitted && form.formState.errors.email?.message}</FormMessage>
+                    <FormMessage>{form.formState.errors.email?.message}</FormMessage>
+                  </FormItem>
+                )}
+              />
+
+              {/* Password */}
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        {
+                          (hide) ? (
+                            <EyeOff className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 cursor-pointer text-muted-foreground" onClick={() => setHide(false)} />
+                          ) : (
+                            <Eye className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 cursor-pointer text-muted-foreground" onClick={() => setHide(true)} />
+                          )
+                        }
+                        <Input
+                          type={hide ? "password" : "text"}
+                          placeholder="Enter your password"
+                          className="w-full pl-10"
+                          disabled={signupIsLoading}
+                          {...field}
+                          onBlur={() => {
+                            field.onBlur();
+                            form.trigger("password");
+                          }}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage>{form.formState.errors.password?.message}</FormMessage>
                   </FormItem>
                 )}
               />
@@ -185,9 +218,9 @@ const SignUpPage = () => {
                   <FormItem>
                     <FormLabel>Date of birth</FormLabel>
                     <FormControl>
-                      <DobPicker date={field.value} setDate={field.onChange} disabled={isLoading} />
+                      <DobPicker date={field.value} setDate={field.onChange} disabled={signupIsLoading} />
                     </FormControl>
-                    <FormMessage>{isSubmitted && form.formState.errors.dob?.message}</FormMessage>
+                    <FormMessage>{form.formState.errors.dob?.message}</FormMessage>
                     <p className="text-xs text-muted-foreground mt-1">
                       This will not be shown publicly. Confirm your own age.
                     </p>
@@ -195,7 +228,7 @@ const SignUpPage = () => {
                 )}
               />
 
-              <LoadingButton type="submit" className="w-full" isLoading={isLoading} disabled={disableButton}>
+              <LoadingButton type="submit" className="w-full" isLoading={signupIsLoading} disabled={disableButton}>
                 Create Account
               </LoadingButton>
 

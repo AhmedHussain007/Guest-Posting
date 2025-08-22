@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,21 +15,24 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Mail, Lock } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 
-// Mock AuthContext (replace with your implementation)
-const AuthContext = React.createContext({ login: async () => true });
-const useAuth = () => useContext(AuthContext);
 
+import { useLoginUserMutation } from '@/apis/authApi';
+
+// Form validation schema
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email" }).min(1, "Email is required"),
-  password: z.string().min(1, "Password is required").min(8, "Password must be at least 8 characters"),
+  password: z.string().min(8, "Must be at least 8 characters")
+    .regex(/[A-Z]/, "Must contain at least one uppercase letter")
+    .regex(/[0-9]/, "Must contain at least one number")
+    .regex(/[^A-Za-z0-9]/, "Must contain at least one special character")
+    .nonempty("Password is required"),
 });
 
 const LogInPage = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const { login } = useAuth();
+  const [hide, setHide] = useState(true);
+  const [loginUser, { isLoading: loginIsLoading }] = useLoginUserMutation();
 
   const form = useForm({
     defaultValues: { email: "", password: "" },
@@ -40,30 +43,23 @@ const LogInPage = () => {
 
   const formValues = form.watch();
   const disableButton =
-    isLoading ||
+    loginIsLoading ||
     !formValues.email?.trim() ||
     !formValues.password?.trim() ||
     !form.formState.isValid;
 
   const onSubmit = async (data) => {
-    setIsSubmitted(true);
     const isValid = await form.trigger();
     if (!isValid) {
       alert("Please fix the errors in the form");
       return;
     }
-
     try {
-      setIsLoading(true);
-      console.log("Signing in...", data);
-      const success = await login(data.email, data.password);
-      if (success) alert("Welcome back!");
-      else alert("Invalid email or password");
+      await loginUser(data).unwrap();
+      alert("Welcome back!");
     } catch (err) {
       console.error(err);
-      alert("An error occurred during login");
-    } finally {
-      setIsLoading(false);
+      alert(err?.data?.message || "Invalid email or password");
     }
   };
 
@@ -109,7 +105,7 @@ const LogInPage = () => {
                           type="email"
                           placeholder="m@example.com"
                           className="w-full pl-10"
-                          disabled={isLoading}
+                          disabled={loginIsLoading}
                           {...field}
                           onBlur={() => {
                             field.onBlur();
@@ -118,7 +114,7 @@ const LogInPage = () => {
                         />
                       </div>
                     </FormControl>
-                    <FormMessage>{isSubmitted && form.formState.errors.email?.message}</FormMessage>
+                    <FormMessage>{form.formState.errors.email?.message}</FormMessage>
                   </FormItem>
                 )}
               />
@@ -133,11 +129,18 @@ const LogInPage = () => {
                       <FormControl>
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          {
+                            (hide) ? (
+                              <EyeOff className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 cursor-pointer text-muted-foreground" onClick={() => setHide(false)} />
+                            ) : (
+                              <Eye className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 cursor-pointer text-muted-foreground" onClick={() => setHide(true)} />
+                            )
+                          }
                           <Input
-                            type="password"
+                            type={hide ? "password" : "text"}
                             placeholder="••••••••"
                             className="w-full pl-10"
-                            disabled={isLoading}
+                            disabled={loginIsLoading}
                             {...field}
                             onBlur={() => {
                               field.onBlur();
@@ -147,14 +150,14 @@ const LogInPage = () => {
                         </div>
                       </FormControl>
                       <FormMessage>
-                        {isSubmitted && form.formState.errors.password?.message}
+                        {form.formState.errors.password?.message}
                       </FormMessage>
                     </div>
                   </FormItem>
                 )}
               />
 
-              <LoadingButton type="submit" className="w-full" isLoading={isLoading} disabled={disableButton}>
+              <LoadingButton type="submit" className="w-full" isLoading={loginIsLoading} disabled={disableButton}>
                 Login
               </LoadingButton>
             </form>
