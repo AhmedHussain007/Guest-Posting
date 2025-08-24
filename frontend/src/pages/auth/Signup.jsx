@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { DobPicker } from "@/components/dobPicker";
 import { Separator } from "@/components/ui/separator";
 import { User, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
 
 
 const formSchema = z.object({
@@ -31,9 +32,10 @@ const formSchema = z.object({
   dob: z.date().refine(val => !!val, { message: "Date of birth is required" }),
 });
 import { useSignupUserMutation } from "@/apis/authApi";
+import { useNavigate } from "react-router-dom";
 
 const SignUpPage = () => {
-  // ...existing code...
+  const navigate = useNavigate();
   const [hide, setHide] = useState(true);
   const [signupUser, { isLoading: signupIsLoading }] = useSignupUserMutation();
   const form = useForm({
@@ -55,18 +57,20 @@ const SignUpPage = () => {
 
   const onSubmit = async (data) => {
     const isValid = await form.trigger();
+    toast.dismiss();
     if (!isValid) {
-      alert("Please fix the errors in the form");
+      toast.error("Please fix the errors in the form");
       return;
     }
     try {
       // Convert dob to ISO string if needed
       const payload = { ...data, dob: data.dob instanceof Date ? data.dob.toISOString() : data.dob };
       await signupUser(payload).unwrap();
-      alert("Account created successfully! Welcome to Zikrly!");
+      navigate('/')
+      toast.success("Account created successfully! Welcome to Zikrly!");
     } catch (err) {
       console.error(err);
-      alert(err?.data?.message || "An error occurred during signup. Please try again.");
+      toast.error(err?.data?.message || "An error occurred during signup. Please try again.");
     }
   };
 

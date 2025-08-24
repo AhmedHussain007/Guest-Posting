@@ -6,6 +6,9 @@ const cors = require('cors');
 const path = require('path');
 const connectDb = require('./config/db')
 const authRoutes = require('./routes/auth.routes')
+const cookieParser = require("cookie-parser");
+const blogRoutes = require('./routes/blog.routes')
+const messageRoutes = require('./routes/messages.routes')
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,13 +27,15 @@ app.use((req, res, next) => {
 app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
+app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/health', (req, res) => {
 	res.status(200).json({ status: 'ok', timestamp: new Date() });
 });
 app.use('/api/auth', authRoutes);
+app.use('/api/blogs', blogRoutes);
+app.use('/api/messages', messageRoutes);
 
 app.use((err, req, res, next) => {
 	console.error(err.stack);

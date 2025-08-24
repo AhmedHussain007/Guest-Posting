@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
 import {
@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
-
+import { useNavigate } from "react-router-dom";
 
 import { useLoginUserMutation } from '@/apis/authApi';
 
@@ -31,6 +31,7 @@ const formSchema = z.object({
 });
 
 const LogInPage = () => {
+  const navigate = useNavigate();
   const [hide, setHide] = useState(true);
   const [loginUser, { isLoading: loginIsLoading }] = useLoginUserMutation();
 
@@ -50,16 +51,18 @@ const LogInPage = () => {
 
   const onSubmit = async (data) => {
     const isValid = await form.trigger();
+    toast.dismiss();
     if (!isValid) {
-      alert("Please fix the errors in the form");
+      toast.error("Please fix the errors in the form");
       return;
     }
     try {
       await loginUser(data).unwrap();
-      alert("Welcome back!");
+      toast.success("Welcome back!");
+      navigate('/profile')
     } catch (err) {
       console.error(err);
-      alert(err?.data?.message || "Invalid email or password");
+      toast.error(err?.data?.message || "Invalid email or password");
     }
   };
 
@@ -162,6 +165,11 @@ const LogInPage = () => {
               </LoadingButton>
             </form>
           </Form>
+
+          <p className="text-right text-sm my-2">
+            <a href="/forgot-password" className="text-blue-500 hover:underline">Forgot Password?</a>
+          </p>
+          <Separator />
 
           <p className="mt-5 text-sm text-center">
             Don&apos;t have an account?{" "}

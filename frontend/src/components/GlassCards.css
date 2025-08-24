@@ -1,0 +1,146 @@
+/* Container */
+.container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: nowrap; /* stacked tilt on desktop */
+  transition: 0.5s;
+  gap: 20px; /* spacing between cards */
+  padding: 0 32px; /* px-8 equivalent */
+}
+
+/* Glass Cards */
+.container .glass {
+  position: relative;
+  flex: 1 1 200px; /* flex-grow, flex-shrink, flex-basis */
+  max-width: 220px; /* max width for large screens */
+  aspect-ratio: 9/10; /* maintain height relative to width */
+  background: linear-gradient(#fff2, transparent);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 25px rgba(0, 0, 0, 0.25);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: 0.5s;
+  border-radius: 10px;
+  margin: 0 -45px;
+  backdrop-filter: blur(10px);
+  transform: rotate(calc(var(--r) * 1deg));
+  cursor: pointer;
+}
+
+/* Spread cards evenly on hover */
+.container:hover .glass {
+  transform: rotate(0deg);
+  margin: 0; /* let gap handle spacing */
+}
+
+.container .glass svg {
+  font-size: 2.5em;
+  fill: #fff;
+}
+
+/* Mobile Responsive */
+@media (max-width: 1024px) {
+  .container {
+    flex-wrap: wrap; /* allow multiple rows if needed */
+    justify-content: center;
+    gap: 16px;
+  }
+  .container .glass {
+    flex: 1 1 45%; /* two per row on tablets */
+    max-width: none;
+    margin: 10px 0;
+    transform: none !important;
+  }
+  .container:hover .glass {
+    margin: 10px 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .container .glass {
+    flex: 1 1 90%; /* one per row on mobile */
+    margin: 10px 0;
+  }
+}
+
+.modal-content {
+  background: linear-gradient(#fff2, transparent); /* glass effect like cards */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 500px;
+  text-align: center;
+  box-shadow: 0 25px 25px rgba(0,0,0,0.25);
+  transition: 0.3s ease-in-out;
+  transform: scale(0.95);
+  animation: popup-appear 0.3s forwards;
+}
+
+/* Add smooth popup animation */
+@keyframes popup-appear {
+  to {
+    transform: scale(1);
+  }
+}
+
+/* Optional: style close button more like glass card */
+.close-btn {
+  margin-top: 1rem;
+  padding: 0.5rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  cursor: pointer;
+  backdrop-filter: blur(5px);
+  transition: 0.3s;
+}
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 50;
+}
+
+.card-info {
+  position: absolute;
+  bottom: 10px;
+  text-align: center;
+  color: #fff;
+  width: 90%;
+}
+
+.card-info h4 {
+  font-size: 1rem;
+  margin-bottom: 5px;
+}
+
+.card-info p {
+  font-size: 0.75rem;
+  margin-bottom: 5px;
+}
+
+.card-btn {
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  cursor: pointer;
+  backdrop-filter: blur(5px);
+  font-size: 0.75rem;
+}
+
+.card-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}

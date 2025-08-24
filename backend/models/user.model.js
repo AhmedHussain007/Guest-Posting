@@ -41,14 +41,6 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: "Update your address",
   },
-  city: {
-    type: String,
-    default: "Update your city",
-  },
-  country: {
-    type: String,
-    default: "Update your country",
-  },
   profilePicture: {
     type: String,
     default: "",

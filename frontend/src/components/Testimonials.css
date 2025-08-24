@@ -1,0 +1,12 @@
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  background: linear-gradient(
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.02)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(6px); /* <-- THIS makes background text blurry */
+  -webkit-backdrop-filter: blur(6px); /* for Safari */
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+}
